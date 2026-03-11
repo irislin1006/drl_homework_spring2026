@@ -20,18 +20,49 @@ from hw1_imitation.data import (
     load_pusht_zarr,
 )
 from hw1_imitation.model import build_policy, PolicyType
-from hw1_imitation.evaluation import Logger
+from hw1_imitation.evaluation import Logger, evaluate_policy
 
 LOGDIR_PREFIX = "exp"
 
+# # MSE Config
+# @dataclass
+# class TrainConfig:
+#     # The path to download the Push-T dataset to.
+#     data_dir: Path = Path("data")
 
+#     # The policy type -- either MSE or flow.
+#     policy_type: PolicyType = "mse"
+#     # The number of denoising steps to use for the flow policy (has no effect for the MSE policy).
+#     flow_num_steps: int = 10
+#     # The action chunk size.
+#     chunk_size: int = 8
+
+#     batch_size: int = 128
+#     lr: float = 3e-4
+#     weight_decay: float = 0.0
+#     hidden_dims: tuple[int, ...] = (256, 256, 256)
+#     # The number of epochs to train for.
+#     num_epochs: int = 400
+#     # How often to run evaluation, measured in training steps.
+#     eval_interval: int = 10_000
+#     num_video_episodes: int = 5
+#     video_size: tuple[int, int] = (256, 256)
+#     # How often to log training metrics, measured in training steps.
+#     log_interval: int = 100
+#     # Random seed.
+#     seed: int = 42
+#     # WandB project name.
+#     wandb_project: str = "hw1-imitation"
+#     # Experiment name suffix for logging and WandB.
+#     exp_name: str | None = None
+
+# Flow Matching Config
 @dataclass
 class TrainConfig:
     # The path to download the Push-T dataset to.
     data_dir: Path = Path("data")
 
-    # The policy type -- either MSE or flow.
-    policy_type: PolicyType = "mse"
+    policy_type: PolicyType = "flow"
     # The number of denoising steps to use for the flow policy (has no effect for the MSE policy).
     flow_num_steps: int = 10
     # The action chunk size.
@@ -128,6 +159,40 @@ def run_training(config: TrainConfig) -> None:
     logger = Logger(log_dir)
 
     ### TODO: PUT YOUR MAIN TRAINING LOOP HERE ###
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=config.lr,
+        weight_decay=config.weight_decay,
+    )
+
+    global_step = 0
+    for i in range(config.num_epochs):
+        for j, (state, action_chunk) in enumerate(loader):
+            state = state.to(device)
+            action_chunk = action_chunk.to(device)
+            loss = model.compute_loss(state, action_chunk)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            global_step += 1
+            
+            if global_step % config.log_interval == 0:
+                logger.log({"train/loss": loss.item()}, step=global_step)
+            
+            if global_step % config.eval_interval == 0:
+                evaluate_policy(
+                    model=model,
+                    normalizer=normalizer,
+                    device=device,
+                    chunk_size=config.chunk_size,
+                    video_size=config.video_size,
+                    num_video_episodes=config.num_video_episodes,
+                    flow_num_steps=config.flow_num_steps,
+                    step=global_step,
+                    logger=logger,
+                )
 
     logger.dump_for_grading()
 
