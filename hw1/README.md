@@ -38,7 +38,17 @@ uv run wandb login
 
 Follow the prompt to paste your API key.
 
-## Using Modal
+## Training Locally
+
+You can train entirely on your local machine — no Modal account needed:
+
+```bash
+uv run python src/hw1_imitation/train.py
+```
+
+Use `--help` to see available flags. For HW1, local CPU training is actually faster than Modal.
+
+## Using Modal (Optional)
 
 **Note that Modal is likely not necessary for this assignment. In testing, training was much faster on a local laptop CPU than on Modal. However, you may need to use Modal in future assignments, so if you want to get set up, here are the instructions:**
 
