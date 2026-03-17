@@ -4,6 +4,31 @@
 
 For general setup and Modal instructions, see Homework 1's README.
 
+### Quick Setup (Linux/WSL)
+
+Run the setup script to install system dependencies and create the virtual environment:
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+### Manual Setup
+
+1. Install system dependencies (Linux/WSL):
+   ```bash
+   sudo apt-get update && sudo apt-get install -y swig python3.10-dev
+   ```
+   On Mac with Homebrew:
+   ```bash
+   brew install swig cmake
+   ```
+
+2. Install Python dependencies (from the `hw2` directory):
+   ```bash
+   uv sync
+   ```
+
 ## Examples
 
 Here are some example commands. Run them in the `hw2` directory.
@@ -26,6 +51,7 @@ However, you may still use Modal if you wish.
 
 ## Troubleshooting
 
-* If you see an error about `swig` when installing `box2d-py`, you may need to install `swig` and `cmake` on your machine.
-If you are using a Mac and have Homebrew installed, you can run `brew install swig cmake`.
-On Modal, it should already be installed.
+* **`swig` not found**: Install with `sudo apt-get install -y swig` (Linux/WSL) or `brew install swig` (Mac).
+* **`Python.h` not found**: Install with `sudo apt-get install -y python3.10-dev` (Linux/WSL). Adjust the version to match your Python (e.g., `python3.11-dev`).
+* **VIRTUAL_ENV mismatch warning**: This is harmless — it means another hw's venv is active. `uv run` uses its own `.venv` regardless.
+* **`box2d-py` build failure**: Ensure both `swig` and `python3.X-dev` are installed, then retry.
