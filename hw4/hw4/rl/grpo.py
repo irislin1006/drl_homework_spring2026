@@ -99,17 +99,17 @@ class GRPO(RLAlgorithm):
                 new_logp = compute_per_token_logprobs(model, mb.input_ids, mb.attention_mask)
                 log_ratio = torch.clamp(new_logp - mb.old_logprobs, -20, 20)
                 ratio = torch.exp(log_ratio)
-                adv = adv.unsqueeze(1)
+                adv_t = adv.unsqueeze(1)
 
-                unclipped = ratio * adv
-                clipped = torch.clamp(ratio, 1 - cfg.clip_eps, 1 + cfg.clip_eps) * adv
+                unclipped = ratio * adv_t
+                clipped = torch.clamp(ratio, 1 - cfg.clip_eps, 1 + cfg.clip_eps) * adv_t
                 per_token_obj = torch.min(unclipped, clipped)
                 seq_obj = masked_mean_per_row(per_token_obj, mask)
                 pg_loss = -seq_obj.mean()
                 kl = approx_kl_from_logprobs(new_logp, mb.ref_logprobs, mask)
                 entropy = -masked_mean(new_logp, mask)
 
-                clipfrac = masked_mean((ratio < (1 - cfg.clip_eps)) | (ratio > (1 + cfg.clip_eps)))
+                clipfrac = masked_mean(((ratio < (1 - cfg.clip_eps)) | (ratio > (1 + cfg.clip_eps))).float(), mask)
 
                 loss = (pg_loss + cfg.kl_coef * kl) / max(1, grad_accum_steps)
                 if not torch.isfinite(loss):
