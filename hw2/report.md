@@ -95,11 +95,11 @@ uv run src/scripts/run.py --env_name HalfCheetah-v4 -n 100 -b 5000 -eb 3000 -rtg
 
 **(a) The baseline learning curve?**
 
-> TODO: Answer here.
+With the default settings (bgs=5, blr=0.01), the baseline loss drops from ~205 to ~14 by the end of training. Reducing baseline gradient steps to 3 results in a slightly higher final baseline loss (~19), indicating the critic has fewer optimization steps per iteration to fit the changing target values. Reducing the baseline learning rate to 0.005 shows a similar final loss (~15) but converges more slowly in the early iterations. In both reduced settings, the critic is less able to keep up with the evolving policy, leading to slightly less accurate value predictions.
 
 **(b) The performance of the policy?**
 
-> TODO: Answer here.
+All three baseline configurations significantly outperform the no-baseline run (which plateaus around -240 eval return). The default baseline achieves ~210 average eval return over the last 5 iterations, while the low-bgs run reaches ~200 and the low-blr run reaches ~206. The differences are modest, suggesting that even a slightly worse critic still provides a useful variance reduction signal. However, the default configuration is the most stable and reaches the highest peak performance.
 
 ---
 
