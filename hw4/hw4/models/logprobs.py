@@ -74,7 +74,12 @@ def build_completion_mask(
     # prompt_input_len is the (padded) prompt length before completion tokens were
     # appended. You can use attention_mask to exclude padding; pad_token_id is passed
     # for convenience but a direct attention-mask-based solution is fine.
-    raise NotImplementedError("student TODO: build_completion_mask")
+    B, L = input_ids.shape
+    mask = torch.zeros(B, L-1, dtype=torch.float32, device=input_ids.device)
+    mask[:, prompt_input_len-1:] = 1.0  # Set mask to 1 for all positions corresponding to completion tokens and beyond
+    mask = mask * attention_mask[:, 1:].float()  # Apply attention mask to exclude padding tokens
+    return mask
+
 
 
 def masked_sum(x: torch.Tensor, mask: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
@@ -118,4 +123,6 @@ def approx_kl_from_logprobs(
     #                             = KL(p_new || p_ref).
     #
     # The clamp to [-20, 20] is for numerical stability / variance control.
-    raise NotImplementedError("student TODO: approx_kl_from_logprobs")
+    delta = torch.clamp(ref_logprobs - new_logprobs, min=-log_ratio_clip, max=log_ratio_clip)
+    per_token = torch.exp(delta) - delta - 1.
+    return masked_mean(per_token , mask, eps)
