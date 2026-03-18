@@ -5,16 +5,22 @@ This repository is set up to run on Modal by default via `scripts/modal_train.py
 ## Quickstart
 
 ```bash
-uv sync
-uv run modal token new
-uvx wandb login
+# Install ALL dependencies (torch, transformers, peft, etc.)
+# NOTE: base `uv sync` only installs modal. You MUST use --extra remote
+# for local GPU training, otherwise you get: ModuleNotFoundError: No module named 'torch'
+uv sync --extra remote
+
+uv run modal token new    # only needed for Modal remote runs
+uvx wandb login            # only needed if using wandb
 ```
 
 All training commands below are intended to be run from the repository root.
 
-## Local GPU Runs
+## Local GPU Runs (H200 Optimized)
 
-If you have a local GPU (H100/H200), you can skip Modal and run `hw4.train` directly. Replace `--output_dir /vol/runs/...` with a local path and optionally disable wandb with `--no-wandb_enabled`.
+If you have a local GPU (H100/H200), you can skip Modal and run `hw4.train` directly.
+
+**H200 optimization**: With 143GB VRAM and a 1.5B LoRA model, set `minibatch_size` to `batch_size * group_size` and `grad_accum_steps=1` to fit all samples in one minibatch (eliminates accumulation overhead, mathematically identical training).
 
 ### Format Copy + GRPO (local)
 
@@ -30,8 +36,8 @@ uv run python -u -m hw4.train \
   --max_new_tokens 24 \
   --lr 3e-5 \
   --ppo_epochs 2 \
-  --minibatch_size 8 \
-  --grad_accum_steps 6 \
+  --minibatch_size 48 \
+  --grad_accum_steps 1 \
   --clip_eps 0.2 \
   --kl_coef 0.05 \
   --max_grad_norm 0.5 \
@@ -57,8 +63,8 @@ uv run python -u -m hw4.train \
   --min_new_tokens 1 \
   --max_new_tokens 24 \
   --lr 3e-5 \
-  --minibatch_size 8 \
-  --grad_accum_steps 6 \
+  --minibatch_size 48 \
+  --grad_accum_steps 1 \
   --kl_coef 0.05 \
   --max_grad_norm 0.5 \
   --no-wandb_enabled \
@@ -86,8 +92,8 @@ uv run python -u -m hw4.train \
   --temperature 0.8 \
   --top_p 0.95 \
   --lr 3e-5 \
-  --minibatch_size 8 \
-  --grad_accum_steps 8 \
+  --minibatch_size 64 \
+  --grad_accum_steps 1 \
   --max_grad_norm 0.5 \
   --kl_coef 0.05 \
   --no-wandb_enabled \
@@ -116,8 +122,8 @@ uv run python -u -m hw4.train \
   --top_p 0.95 \
   --lr 3e-5 \
   --ppo_epochs 2 \
-  --minibatch_size 8 \
-  --grad_accum_steps 8 \
+  --minibatch_size 64 \
+  --grad_accum_steps 1 \
   --clip_eps 0.2 \
   --max_grad_norm 0.5 \
   --kl_coef 0.05 \
