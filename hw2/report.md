@@ -36,19 +36,19 @@ No parameters were changed from defaults beyond those shown above.
 
 **Which value estimator has better performance without advantage normalization: the trajectory-centric one, or the one using reward-to-go?**
 
-> TODO: Answer here based on your plots. Compare `cartpole` vs `cartpole_rtg` and `cartpole_lb` vs `cartpole_lb_rtg`.
+`cartpole_lb_rtg`
 
 **Between the two value estimators, why do you think one is generally preferred over the other?**
 
-> TODO: Think about causality — can an action at time t affect rewards before time t? What does this imply about variance in the gradient estimate?
+Using causality. Current reward won't affect future rewards lead to less variance
 
 **Did advantage normalization help?**
 
-> TODO: Answer here based on your plots. Compare runs with and without `-na`.
+Helps immensively
 
 **Did the batch size make an impact?**
 
-> TODO: Compare the small batch (b=1000) plots to the large batch (b=4000) plots. Consider both final performance and stability/smoothness of learning.
+Larger the batch size more smoother representing a lower variance
 
 ---
 
