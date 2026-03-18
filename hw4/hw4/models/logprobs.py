@@ -43,14 +43,8 @@ def compute_per_token_logprobs(
     #
     # Respect enable_grad: when enable_grad=False this function should not build an
     # autograd graph.
-    if not enable_grad:
-        with torch.no_grad():
-            out = model(input_ids=input_ids, attention_mask=attention_mask, use_cache=False)
-            logits = out.logits[:, :-1, :]
-            targets = input_ids[:, 1:]
-            per_token_nll = F.cross_entropy(logits.reshape(-1, logits.size(-1)), targets.reshape(-1), reduction='none')
-            per_token_nll = per_token_nll.view(input_ids.size(0), -1)
-    else:
+    ctx = torch.no_grad() if not enable_grad else torch.enable_grad()
+    with ctx:
         out = model(input_ids=input_ids, attention_mask=attention_mask, use_cache=False)
         logits = out.logits[:, :-1, :]
         targets = input_ids[:, 1:]
