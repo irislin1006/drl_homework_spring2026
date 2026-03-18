@@ -41,7 +41,7 @@ uv run python -u -m hw4.train \
   --clip_eps 0.2 \
   --kl_coef 0.05 \
   --max_grad_norm 0.5 \
-  --no-wandb_enabled \
+  --wandb_enabled --wandb_project llm-rl-hw4 --wandb_name format_copy_grpo \
   --sample_markdown_log_interval 1 \
   --sample_log_interval 10 \
   --sample_log_n 6 \
@@ -67,7 +67,7 @@ uv run python -u -m hw4.train \
   --grad_accum_steps 1 \
   --kl_coef 0.05 \
   --max_grad_norm 0.5 \
-  --no-wandb_enabled \
+  --wandb_enabled --wandb_project llm-rl-hw4 --wandb_name format_copy_reinforce \
   --sample_markdown_log_interval 1 \
   --sample_log_interval 10 \
   --sample_log_n 6 \
@@ -96,7 +96,7 @@ uv run python -u -m hw4.train \
   --grad_accum_steps 1 \
   --max_grad_norm 0.5 \
   --kl_coef 0.05 \
-  --no-wandb_enabled \
+  --wandb_enabled --wandb_project llm-rl-hw4 --wandb_name math_hard_reinforce \
   --sample_markdown_log_interval 1 \
   --sample_log_interval 10 \
   --sample_log_n 8 \
@@ -127,7 +127,7 @@ uv run python -u -m hw4.train \
   --clip_eps 0.2 \
   --max_grad_norm 0.5 \
   --kl_coef 0.05 \
-  --no-wandb_enabled \
+  --wandb_enabled --wandb_project llm-rl-hw4 --wandb_name math_hard_grpo \
   --sample_markdown_log_interval 1 \
   --sample_log_interval 10 \
   --sample_log_n 8 \
