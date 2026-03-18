@@ -81,7 +81,14 @@ No parameters were changed from defaults beyond those shown above.
 ### Reduced Baseline Gradient Steps / Learning Rate Experiment
 
 ```bash
-# TODO: Add your command here (e.g., with -bgs 1 or -blr 0.001)
+# Lower Baseline Gradient Steps
+uv run src/scripts/run.py --env_name HalfCheetah-v4 -n 100 -b 5000 -eb 3000 -rtg --discount 0.95 -lr 0.01 --use_baseline -blr 0.01 -bgs 3 --exp_name cheetah_baseline_low_bgs
+
+# Lower Baseline Learning Rate
+uv run src/scripts/run.py --env_name HalfCheetah-v4 -n 100 -b 5000 -eb 3000 -rtg --discount 0.95 -lr 0.01 --use_baseline -blr 0.005 -bgs 5 --exp_name cheetah_baseline_low_blr
+
+# Optional
+uv run src/scripts/run.py --env_name HalfCheetah-v4 -n 100 -b 5000 -eb 3000 -rtg --discount 0.95 -lr 0.01 --use_baseline -blr 0.01 -bgs 5 -na --video_log_freq 10 --exp_name cheetah_baseline_na
 ```
 
 **How does reducing baseline gradient steps (or baseline learning rate) affect:**
