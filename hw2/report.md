@@ -36,19 +36,19 @@ No parameters were changed from defaults beyond those shown above.
 
 **Which value estimator has better performance without advantage normalization: the trajectory-centric one, or the one using reward-to-go?**
 
-`cartpole_lb_rtg`
+Reward-to-go performs better in the small batch case (`cartpole_rtg` reaches ~155 avg return vs. `cartpole` at ~85). In the large batch case, both converge to 200, though the vanilla trajectory-centric estimator actually converges slightly faster. Overall, reward-to-go shows a clearer advantage when the batch size is small and variance matters more.
 
 **Between the two value estimators, why do you think one is generally preferred over the other?**
 
-Using causality. Current reward won't affect future rewards lead to less variance
+Reward-to-go is generally preferred because it exploits causality: an action at time t cannot affect rewards that already occurred before time t. The trajectory-centric estimator assigns credit for past rewards to the current action, which is pure noise in the gradient estimate. By only summing rewards from time t onward, reward-to-go removes this irrelevant signal and reduces variance.
 
 **Did advantage normalization help?**
 
-Helps immensively
+Yes, significantly. In the small batch case, advantage normalization was the biggest factor — both `cartpole_na` and `cartpole_rtg_na` converge to 200, while without it, `cartpole` (~85) and `cartpole_rtg` (~155) fail to reach the maximum. Normalization centers the advantages around zero, ensuring some actions are reinforced and others are discouraged within each batch, rather than all being pushed in the same direction.
 
 **Did the batch size make an impact?**
 
-Larger the batch size more smoother representing a lower variance
+Yes. With a larger batch size (b=4000), all configurations converge to 200, including the vanilla estimator which struggles at b=1000. The learning curves are also smoother with larger batches. This is because larger batches provide a better Monte Carlo estimate of the policy gradient, reducing the variance of the gradient updates.
 
 ---
 
