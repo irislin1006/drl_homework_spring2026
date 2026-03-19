@@ -117,23 +117,3 @@ uv run python scripts/plot_results.py
 ```
 
 All plots are saved in `hw4/plots/`.
-
-## Submission Checklist
-
-- [x] 4 required training runs completed
-  - [x] format_copy + GRPO (eval: 1.00)
-  - [x] format_copy + REINFORCE (eval: 1.00)
-  - [x] math_hard + REINFORCE (eval: 0.295)
-  - [x] math_hard + GRPO (eval: 0.373)
-- [x] 5 GRPO ablation runs on format_copy completed
-  - [x] ppo_epochs=4
-  - [x] kl_coef=0.01
-  - [x] kl_coef=0.2
-  - [x] clip_eps=0.1
-  - [x] grad_accum_steps=1, minibatch_size=8
-- [x] Report questions 1-5 answered with data and plots
-- [x] Plots generated via `scripts/plot_results.py`
-- [ ] Convert report.md to PDF for submission
-- [ ] Gradescope submission bundle built
-- [ ] Code + artifacts zipped and uploaded to autograder
-- [ ] Report PDF uploaded to report assignment
