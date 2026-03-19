@@ -154,18 +154,26 @@ lambda=0 uses only the 1-step TD error (delta_t = r_t + gamma * V(s_{t+1}) - V(s
 ```bash
 # Default
 uv run src/scripts/run.py --env_name InvertedPendulum-v4 -n 100 -b 5000 -eb 1000 \
-    --exp_name pendulum
+    --exp_name pendulum_default
 
 # Best hyperparameters
-# TODO: Add your tuned command here
+uv run src/scripts/run.py --env_name InvertedPendulum-v4 -n 200 -b 500 -eb 1000 \
+    -rtg -na -lr 0.02 --exp_name pendulum_b500_lr02
 ```
 
 ### Best Hyperparameters
 
-> TODO: List the hyperparameters you changed and briefly discuss which ones mattered most in your tuning process.
+The most impactful change was **reducing the batch size** from 5000 to 500. The default uses 100 iterations * 5000 steps = 500K total environment steps, but only gets one gradient update per 5000 steps. By reducing to b=500 with n=200, we get 200 gradient updates within 100K total steps — 4x more learning per step budget.
+
+The other changes that helped:
+- **Reward-to-go (`-rtg`)**: Reduces variance by only crediting actions for future rewards, not past ones.
+- **Advantage normalization (`-na`)**: Ensures a balanced gradient signal (some actions reinforced, some discouraged) rather than pushing all actions in the same direction.
+- **Higher learning rate (`-lr 0.02`)**: Since InvertedPendulum is a simple task, a higher learning rate allows faster convergence without instability. The default 0.005 is too conservative.
+
+Batch size mattered the most — it determines how many gradient updates you get within the 100K step budget. The variance reduction tricks (rtg, na) and learning rate were secondary but still contributed to faster convergence.
 
 ### Learning Curves
 
 ![InvertedPendulum comparison](figures/pendulum_comparison.png)
 
-> TODO: Show your tuned run reaching return of 1000 within 100K environment steps, compared to the default setting.
+The tuned run reaches a return of 1000 within ~20K-30K environment steps, well under the 100K budget. The default run (b=5000) only reaches ~350 after 500K steps and never hits 1000.
