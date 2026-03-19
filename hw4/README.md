@@ -5,22 +5,28 @@ This repository is set up to run on Modal by default via `scripts/modal_train.py
 ## Quickstart
 
 ```bash
-uv sync
-uv run modal token new
-uvx wandb login
+# Install ALL dependencies (torch, transformers, peft, etc.)
+# NOTE: base `uv sync` only installs modal. You MUST use --extra remote
+# for local GPU training, otherwise you get: ModuleNotFoundError: No module named 'torch'
+uv sync --extra remote
+
+uv run modal token new    # only needed for Modal remote runs
+uvx wandb login            # only needed if using wandb
 ```
 
 All training commands below are intended to be run from the repository root.
 
-## Required Runs
+## Local GPU Runs
 
-### Format Copy + GRPO
+If you have a local GPU (H100/H200), you can skip Modal and run `hw4.train` directly.
+
+### Format Copy + GRPO (local)
 
 ```bash
-uv run modal run --detach scripts/modal_train.py -- \
+uv run python -u -m hw4.train \
   --task format_copy \
   --algo grpo \
-  --output_dir /vol/runs/modal_format_copy_grpo \
+  --output_dir runs/format_copy_grpo \
   --steps 51 \
   --batch_size 8 \
   --group_size 6 \
@@ -28,14 +34,12 @@ uv run modal run --detach scripts/modal_train.py -- \
   --max_new_tokens 24 \
   --lr 3e-5 \
   --ppo_epochs 2 \
-  --minibatch_size 8 \
-  --grad_accum_steps 6 \
+  --minibatch_size 48 \
+  --grad_accum_steps 1 \
   --clip_eps 0.2 \
   --kl_coef 0.05 \
   --max_grad_norm 0.5 \
-  --wandb_enabled \
-  --wandb_project llm-rl-hw4 \
-  --wandb_name format_copy_grpo \
+  --wandb_enabled --wandb_project llm-rl-hw4 --wandb_name format_copy_grpo \
   --sample_markdown_log_interval 1 \
   --sample_log_interval 10 \
   --sample_log_n 6 \
@@ -44,26 +48,24 @@ uv run modal run --detach scripts/modal_train.py -- \
   --warmup_steps 10
 ```
 
-### Format Copy + REINFORCE
+### Format Copy + REINFORCE (local)
 
 ```bash
-uv run modal run --detach scripts/modal_train.py -- \
+uv run python -u -m hw4.train \
   --task format_copy \
   --algo reinforce \
-  --output_dir /vol/runs/modal_format_copy_reinforce \
+  --output_dir runs/format_copy_reinforce \
   --steps 51 \
   --batch_size 8 \
   --group_size 6 \
   --min_new_tokens 1 \
   --max_new_tokens 24 \
   --lr 3e-5 \
-  --minibatch_size 8 \
-  --grad_accum_steps 6 \
+  --minibatch_size 48 \
+  --grad_accum_steps 1 \
   --kl_coef 0.05 \
   --max_grad_norm 0.5 \
-  --wandb_enabled \
-  --wandb_project llm-rl-hw4 \
-  --wandb_name format_copy_reinforce \
+  --wandb_enabled --wandb_project llm-rl-hw4 --wandb_name format_copy_reinforce \
   --sample_markdown_log_interval 1 \
   --sample_log_interval 10 \
   --sample_log_n 6 \
@@ -72,13 +74,13 @@ uv run modal run --detach scripts/modal_train.py -- \
   --warmup_steps 10
 ```
 
-### Math Hard + REINFORCE
+### Math Hard + REINFORCE (local)
 
 ```bash
-uv run modal run --detach scripts/modal_train.py -- \
+uv run python -u -m hw4.train \
   --task math_hard \
   --algo reinforce \
-  --output_dir /vol/runs/modal_math_hard_reinforce \
+  --output_dir runs/math_hard_reinforce \
   --steps 201 \
   --batch_size 8 \
   --group_size 8 \
@@ -88,13 +90,11 @@ uv run modal run --detach scripts/modal_train.py -- \
   --temperature 0.8 \
   --top_p 0.95 \
   --lr 3e-5 \
-  --minibatch_size 8 \
-  --grad_accum_steps 8 \
+  --minibatch_size 64 \
+  --grad_accum_steps 1 \
   --max_grad_norm 0.5 \
   --kl_coef 0.05 \
-  --wandb_enabled \
-  --wandb_project llm-rl-hw4 \
-  --wandb_name math_hard_reinforce \
+  --wandb_enabled --wandb_project llm-rl-hw4 --wandb_name math_hard_reinforce \
   --sample_markdown_log_interval 1 \
   --sample_log_interval 10 \
   --sample_log_n 8 \
@@ -103,13 +103,13 @@ uv run modal run --detach scripts/modal_train.py -- \
   --save_interval 100
 ```
 
-### Math Hard + GRPO
+### Math Hard + GRPO (local)
 
 ```bash
-uv run modal run --detach scripts/modal_train.py -- \
+uv run python -u -m hw4.train \
   --task math_hard \
   --algo grpo \
-  --output_dir /vol/runs/modal_math_hard_grpo \
+  --output_dir runs/math_hard_grpo \
   --steps 501 \
   --batch_size 8 \
   --group_size 8 \
@@ -120,59 +120,16 @@ uv run modal run --detach scripts/modal_train.py -- \
   --top_p 0.95 \
   --lr 3e-5 \
   --ppo_epochs 2 \
-  --minibatch_size 8 \
-  --grad_accum_steps 8 \
+  --minibatch_size 64 \
+  --grad_accum_steps 1 \
   --clip_eps 0.2 \
   --max_grad_norm 0.5 \
   --kl_coef 0.05 \
-  --wandb_enabled \
-  --wandb_project llm-rl-hw4 \
-  --wandb_name math_hard_grpo \
+  --wandb_enabled --wandb_project llm-rl-hw4 --wandb_name math_hard_grpo \
   --sample_markdown_log_interval 1 \
   --sample_log_interval 10 \
   --sample_log_n 8 \
   --cuda_empty_cache_interval 50 \
   --eval_interval 100 \
   --save_interval 100
-```
-
-## Build the Gradescope Bundle
-
-Pass `--run_dir` once for each completed run you want to include. You can build and submit a partial bundle before all four required runs are finished; missing runs will simply show up as missing / zero-credit on Gradescope until you add them later.
-
-```bash
-uv run modal run scripts/modal_train.py::bundle_submission_remote -- \
-  --run_dir /vol/runs/modal_format_copy_grpo \
-  --run_dir /vol/runs/modal_format_copy_reinforce \
-  --run_dir /vol/runs/modal_math_hard_grpo \
-  --run_dir /vol/runs/modal_math_hard_reinforce \
-  --output_dir /vol/submissions/hw4_gradescope_submission \
-  --overwrite
-```
-
-```bash
-uv run modal volume get hw4-llm-rl-volume /submissions/hw4_gradescope_submission.zip .
-```
-
-## Package for Gradescope
-
-1. Unzip `hw4_gradescope_submission.zip`.
-2. Put your homework repo folder `hw4/` and the unzipped `hw4_gradescope_submission/` folder side by side in the same parent directory.
-3. Zip those two folders together directly, with no outer wrapper directory.
-
-The uploaded zip should look like this at the top level:
-
-```text
-hw4_submission.zip
-  hw4/
-    ...
-  hw4_gradescope_submission/
-    ...
-```
-
-If your current working directory is the parent directory containing both folders, one convenient command is:
-
-```bash
-zip -r hw4_submission.zip hw4 hw4_gradescope_submission \
-  -x "hw4/.venv/*" "hw4/.git/*" "hw4/**/__pycache__/*" "*.pyc" ".DS_Store"
 ```
