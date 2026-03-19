@@ -140,9 +140,9 @@ def plot_section5():
 
     prefixes = [
         "LunarLander-v2_lunar_lander_lambda0_sd",
-        "LunarLander-v2_lunar_lander_lambda0.95_sd",
-        "LunarLander-v2_lunar_lander_lambda0.98_sd",
-        "LunarLander-v2_lunar_lander_lambda0.99_sd",
+        "LunarLander-v2_lunar_lander_lambda0_95_sd",
+        "LunarLander-v2_lunar_lander_lambda0_98_sd",
+        "LunarLander-v2_lunar_lander_lambda0_99_sd",
         "LunarLander-v2_lunar_lander_lambda1_sd",
     ]
     labels = [
@@ -159,10 +159,37 @@ def plot_section5():
 
 
 def plot_section6():
-    """Experiment 4: InvertedPendulum — default vs tuned hyperparameters."""
+    """Experiment 4: InvertedPendulum — default vs best tuned run."""
     print("\n=== Section 6: InvertedPendulum ===")
 
-    # Find all pendulum runs
+    # Plot 1: Clean comparison — default vs best tuned run
+    # Change "pendulum_b500_lr02" to your best run if different
+    best_prefix = "InvertedPendulum-v4_pendulum_b500_lr02_sd"
+    default_prefix = "InvertedPendulum-v4_pendulum_default_sd"
+
+    prefixes = [default_prefix, best_prefix]
+    labels = ["default (b=5000)", "tuned (b=500, rtg, na, lr=0.02)"]
+
+    plt.figure(figsize=(10, 6))
+    for prefix, label in zip(prefixes, labels):
+        x, y = load_run(prefix)
+        if x is not None:
+            plt.plot(x, y, label=label, linewidth=2)
+
+    plt.axhline(y=1000, color='gray', linestyle='--', alpha=0.5, label='target (1000)')
+    plt.axvline(x=100000, color='gray', linestyle=':', alpha=0.5, label='100K step budget')
+    plt.xlabel("Environment Steps (Train_EnvstepsSoFar)")
+    plt.ylabel("Eval Average Return")
+    plt.title("InvertedPendulum — Default vs Tuned")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    save_path = os.path.join(FIG_DIR, "pendulum_comparison.png")
+    plt.savefig(save_path, dpi=150)
+    plt.close()
+    print(f"  Saved: {save_path}")
+
+    # Plot 2: All tuning runs (for reference)
     pattern = os.path.join(EXP_DIR, "InvertedPendulum-v4_pendulum*", "log.csv")
     matches = sorted(glob.glob(pattern))
 
@@ -173,19 +200,20 @@ def plot_section6():
     plt.figure(figsize=(10, 6))
     for path in matches:
         df = pd.read_csv(path)
-        # Extract experiment name from directory
         exp_name = os.path.basename(os.path.dirname(path))
-        # Shorten label: extract just the part after "InvertedPendulum-v4_"
         label = exp_name.split("InvertedPendulum-v4_")[1].rsplit("_sd", 1)[0]
         plt.plot(df["Train_EnvstepsSoFar"], df["Eval_AverageReturn"], label=label)
 
+    plt.axhline(y=1000, color='gray', linestyle='--', alpha=0.5)
+    plt.axvline(x=100000, color='gray', linestyle=':', alpha=0.5)
+    plt.xlim(0, 150000)  # zoom into the 100K region
     plt.xlabel("Environment Steps (Train_EnvstepsSoFar)")
     plt.ylabel("Eval Average Return")
-    plt.title("InvertedPendulum — Hyperparameter Tuning")
-    plt.legend()
+    plt.title("InvertedPendulum — All Tuning Runs (zoomed to 150K steps)")
+    plt.legend(fontsize=8)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    save_path = os.path.join(FIG_DIR, "pendulum_comparison.png")
+    save_path = os.path.join(FIG_DIR, "pendulum_all_runs.png")
     plt.savefig(save_path, dpi=150)
     plt.close()
     print(f"  Saved: {save_path}")

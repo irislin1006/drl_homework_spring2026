@@ -70,7 +70,7 @@ class MLPPolicy(nn.Module):
         obs = ptu.from_numpy(obs)
         distributions = self.forward(obs)
         action = distributions.sample()
-        action = action.squeeze()  # from (1,) to scalar for discrete, from (1, ac_dim) to (ac_dim,) for continuous
+        action = action.squeeze(0)  # remove batch dim only: (1,) -> scalar for discrete, (1, ac_dim) -> (ac_dim,) for continuous
         return action.cpu().numpy()
 
     def forward(self, obs: torch.FloatTensor):

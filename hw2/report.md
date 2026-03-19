@@ -36,19 +36,19 @@ No parameters were changed from defaults beyond those shown above.
 
 **Which value estimator has better performance without advantage normalization: the trajectory-centric one, or the one using reward-to-go?**
 
-Reward-to-go performs better in the small batch case (`cartpole_rtg` reaches ~155 avg return vs. `cartpole` at ~85). In the large batch case, both converge to 200, though the vanilla trajectory-centric estimator actually converges slightly faster. Overall, reward-to-go shows a clearer advantage when the batch size is small and variance matters more.
+Reward-to-go performs better. In the small batch case, `cartpole_rtg` (orange) reaches ~150-160 and trends upward, while `cartpole` (blue) stays around 75-80 and never consistently improves. In the large batch case, both eventually reach 200, but `cartpole_lb_rtg` converges faster and more stably, while `cartpole_lb` (blue) still shows significant drops even at 300K+ steps.
 
 **Between the two value estimators, why do you think one is generally preferred over the other?**
 
-Reward-to-go is generally preferred because it exploits causality: an action at time t cannot affect rewards that already occurred before time t. The trajectory-centric estimator assigns credit for past rewards to the current action, which is pure noise in the gradient estimate. By only summing rewards from time t onward, reward-to-go removes this irrelevant signal and reduces variance.
+Reward-to-go is preferred because it exploits causality: an action at time t cannot affect rewards that already occurred before t. The trajectory-centric estimator assigns credit for *all* rewards (including past ones) to every action, which adds noise to the gradient. For example, if reward at t=0 was unusually high, the trajectory-centric estimator would incorrectly reinforce the action at t=50 for that reward. Reward-to-go removes this irrelevant signal, reducing variance without introducing any bias.
 
 **Did advantage normalization help?**
 
-Yes, significantly. In the small batch case, advantage normalization was the biggest factor — both `cartpole_na` and `cartpole_rtg_na` converge to 200, while without it, `cartpole` (~85) and `cartpole_rtg` (~155) fail to reach the maximum. Normalization centers the advantages around zero, ensuring some actions are reinforced and others are discouraged within each batch, rather than all being pushed in the same direction.
+Yes, substantially. In the small batch plot, the two runs with advantage normalization (`na` in green, `rtg + na` in red) are the first to reach and sustain 200, converging around 15K-20K steps. Without normalization, `cartpole` (blue) stays below 100 and `cartpole_rtg` (orange) is unstable. Normalization ensures that within each batch, roughly half the advantages are positive (reinforced) and half are negative (discouraged), rather than all being pushed in the same direction when returns are uniformly positive.
 
 **Did the batch size make an impact?**
 
-Yes. With a larger batch size (b=4000), all configurations converge to 200, including the vanilla estimator which struggles at b=1000. The learning curves are also smoother with larger batches. This is because larger batches provide a better Monte Carlo estimate of the policy gradient, reducing the variance of the gradient updates.
+Yes. With b=4000, all configurations eventually approach 200, including vanilla (blue) which struggled at b=1000. The large batch curves are also smoother overall. The `rtg + na` configuration (red) converges rapidly and stays at 200 almost perfectly from ~100K steps onward. Larger batches provide a lower-variance estimate of the policy gradient, since averaging over more trajectories reduces the noise in the gradient.
 
 ---
 
@@ -95,11 +95,11 @@ uv run src/scripts/run.py --env_name HalfCheetah-v4 -n 100 -b 5000 -eb 3000 -rtg
 
 **(a) The baseline learning curve?**
 
-> TODO: Answer here.
+With the default settings (bgs=5, blr=0.01), the baseline loss drops from ~205 to ~14 by the end of training. Reducing baseline gradient steps to 3 results in a slightly higher final baseline loss (~19), indicating the critic has fewer optimization steps per iteration to fit the changing target values. Reducing the baseline learning rate to 0.005 shows a similar final loss (~15) but converges more slowly in the early iterations. In both reduced settings, the critic is less able to keep up with the evolving policy, leading to slightly less accurate value predictions.
 
 **(b) The performance of the policy?**
 
-> TODO: Answer here.
+All three baseline configurations significantly outperform the no-baseline run (which plateaus around -240 eval return). The default baseline achieves ~210 average eval return over the last 5 iterations, while the low-bgs run reaches ~200 and the low-blr run reaches ~206. The differences are modest, suggesting that even a slightly worse critic still provides a useful variance reduction signal. However, the default configuration is the most stable and reaches the highest peak performance.
 
 ---
 
@@ -114,15 +114,15 @@ uv run src/scripts/run.py --env_name LunarLander-v2 --ep_len 1000 --discount 0.9
 
 uv run src/scripts/run.py --env_name LunarLander-v2 --ep_len 1000 --discount 0.99 \
     -n 200 -b 2000 -eb 2000 -l 3 -s 128 -lr 0.001 --use_reward_to_go --use_baseline \
-    --gae_lambda 0.95 --exp_name lunar_lander_lambda0.95
+    --gae_lambda 0.95 --exp_name lunar_lander_lambda0_95
 
 uv run src/scripts/run.py --env_name LunarLander-v2 --ep_len 1000 --discount 0.99 \
     -n 200 -b 2000 -eb 2000 -l 3 -s 128 -lr 0.001 --use_reward_to_go --use_baseline \
-    --gae_lambda 0.98 --exp_name lunar_lander_lambda0.98
+    --gae_lambda 0.98 --exp_name lunar_lander_lambda0_98
 
 uv run src/scripts/run.py --env_name LunarLander-v2 --ep_len 1000 --discount 0.99 \
     -n 200 -b 2000 -eb 2000 -l 3 -s 128 -lr 0.001 --use_reward_to_go --use_baseline \
-    --gae_lambda 0.99 --exp_name lunar_lander_lambda0.99
+    --gae_lambda 0.99 --exp_name lunar_lander_lambda0_99
 
 uv run src/scripts/run.py --env_name LunarLander-v2 --ep_len 1000 --discount 0.99 \
     -n 200 -b 2000 -eb 2000 -l 3 -s 128 -lr 0.001 --use_reward_to_go --use_baseline \
@@ -139,11 +139,11 @@ No parameters were changed from defaults beyond those shown above.
 
 **How did lambda affect task performance?**
 
-> TODO: Describe the trend you observe across different lambda values.
+lambda=0 (blue) performed the worst, remaining mostly negative throughout training and failing to learn a good policy. The intermediate values lambda=0.95, 0.98, and 0.99 all performed significantly better, with lambda=0.98 (green) and lambda=0.99 (red) achieving the highest returns, reaching above 100-150 during training. lambda=1 (purple) showed more oscillation and instability compared to the intermediate values, though it still outperformed lambda=0. Overall, moderate lambda values (0.95-0.99) provided the best balance, while the extremes (0 and 1) performed worse for different reasons.
 
 **What does lambda=0 correspond to? What about lambda=1?**
 
-> TODO: lambda=0 corresponds to... lambda=1 corresponds to... Relate to the LunarLander results.
+lambda=0 uses only the 1-step TD error (delta_t = r_t + gamma * V(s_{t+1}) - V(s_t)) as the advantage estimate. This relies entirely on the critic's predictions, giving low variance but high bias — if the critic is inaccurate (especially early in training), the advantage estimates are misleading. lambda=1 uses the full Monte Carlo return minus the baseline, equivalent to the standard advantage (q_values - V(s)). This introduces no bias but has high variance since it depends on the full sequence of sampled rewards. In LunarLander, lambda=0 fails because the critic is too inaccurate early on to provide useful signal alone, while lambda=1 is noisier than the intermediate values that blend both approaches.
 
 ---
 
@@ -154,18 +154,26 @@ No parameters were changed from defaults beyond those shown above.
 ```bash
 # Default
 uv run src/scripts/run.py --env_name InvertedPendulum-v4 -n 100 -b 5000 -eb 1000 \
-    --exp_name pendulum
+    --exp_name pendulum_default
 
 # Best hyperparameters
-# TODO: Add your tuned command here
+uv run src/scripts/run.py --env_name InvertedPendulum-v4 -n 200 -b 500 -eb 1000 \
+    -rtg -na -lr 0.02 --exp_name pendulum_b500_lr02
 ```
 
 ### Best Hyperparameters
 
-> TODO: List the hyperparameters you changed and briefly discuss which ones mattered most in your tuning process.
+The most impactful change was **reducing the batch size** from 5000 to 500. The default uses 100 iterations * 5000 steps = 500K total environment steps, but only gets one gradient update per 5000 steps. By reducing to b=500 with n=200, we get 200 gradient updates within 100K total steps — 4x more learning per step budget.
+
+The other changes that helped:
+- **Reward-to-go (`-rtg`)**: Reduces variance by only crediting actions for future rewards, not past ones.
+- **Advantage normalization (`-na`)**: Ensures a balanced gradient signal (some actions reinforced, some discouraged) rather than pushing all actions in the same direction.
+- **Higher learning rate (`-lr 0.02`)**: Since InvertedPendulum is a simple task, a higher learning rate allows faster convergence without instability. The default 0.005 is too conservative.
+
+Batch size mattered the most — it determines how many gradient updates you get within the 100K step budget. The variance reduction tricks (rtg, na) and learning rate were secondary but still contributed to faster convergence.
 
 ### Learning Curves
 
 ![InvertedPendulum comparison](figures/pendulum_comparison.png)
 
-> TODO: Show your tuned run reaching return of 1000 within 100K environment steps, compared to the default setting.
+The tuned run reaches a return of 1000 within ~20K-30K environment steps, well under the 100K budget. The default run (b=5000) only reaches ~350 after 500K steps and never hits 1000.
