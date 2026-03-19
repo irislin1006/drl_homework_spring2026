@@ -140,9 +140,9 @@ def plot_section5():
 
     prefixes = [
         "LunarLander-v2_lunar_lander_lambda0_sd",
-        "LunarLander-v2_lunar_lander_lambda0.95_sd",
-        "LunarLander-v2_lunar_lander_lambda0.98_sd",
-        "LunarLander-v2_lunar_lander_lambda0.99_sd",
+        "LunarLander-v2_lunar_lander_lambda0_95_sd",
+        "LunarLander-v2_lunar_lander_lambda0_98_sd",
+        "LunarLander-v2_lunar_lander_lambda0_99_sd",
         "LunarLander-v2_lunar_lander_lambda1_sd",
     ]
     labels = [
