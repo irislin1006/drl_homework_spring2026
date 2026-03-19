@@ -29,7 +29,9 @@ I implemented the TODOs in order (1 through 8):
 
 ## Question 3: GR-REINFORCE vs. GRPO on Math Hard
 
-*(Paste WandB charts comparing math_hard_reinforce and math_hard_grpo here)*
+![Math Hard — Train Reward and Eval Exact Match](plots/math_hard_comparison.png)
+
+![Math Hard — KL Divergence](plots/math_hard_kl.png)
 
 ### Results
 
@@ -54,6 +56,12 @@ GRPO's advantage becomes more pronounced over its remaining 300 steps, reaching 
 ### Baseline Configuration
 Default format_copy + GRPO: `ppo_epochs=2, kl_coef=0.05, clip_eps=0.2, minibatch_size=48, grad_accum_steps=1`
 
+![GRPO Ablations — Train Reward](plots/ablation_reward.png)
+
+![GRPO Ablations — KL Divergence](plots/ablation_kl.png)
+
+![GRPO Ablations — Clip Fraction](plots/ablation_clipfrac.png)
+
 ### Results
 
 | Run | Changed Param | Final Reward (step 50) | Final Eval | Final KL | Stability Notes |
@@ -69,7 +77,7 @@ Default format_copy + GRPO: `ppo_epochs=2, kl_coef=0.05, clip_eps=0.2, minibatch
 
 **Which hyperparameters mattered most:**
 
-1. **minibatch_size / grad_accum_steps** had the largest effect on stability. With `minibatch_size=8, grad_accum_steps=1`, each rollout produces `ppo_epochs × (48/8) = 12` optimizer updates instead of 2. This caused massive KL divergence spikes (up to 1.6) and reward collapses — at step 42, reward crashed to 0.1 before recovering by step 46. The policy takes too many gradient steps on each batch, causing it to overshoot and oscillate. This is the clearest example of instability from excessive per-rollout updates.
+1. **minibatch_size / grad_accum_steps** had the largest effect on stability. With `minibatch_size=8, grad_accum_steps=1`, each rollout produces `ppo_epochs × (48/8) = 12` optimizer updates instead of 2. This caused massive KL divergence spikes (up to 1.6) and reward collapses — at step 42, reward crashed to 0.1 before recovering by step 46. The policy takes too many gradient steps on each batch, causing it to overshoot and oscillate. The clip fraction plot confirms this: `mb=8` has the highest clip fraction (~0.13), indicating the policy ratio frequently exceeded the trust region. This is the clearest example of instability from excessive per-rollout updates.
 
 2. **kl_coef** controlled the reward-KL tradeoff. With `kl_coef=0.01` (weaker penalty), the policy was less constrained and learned similarly to baseline. With `kl_coef=0.2` (stronger penalty), rewards degraded noticeably in the second half of training — dropping from ~1.30 to ~0.89–1.11 — because the KL penalty dominated the objective and prevented the policy from fully exploiting the learned behavior. The sweet spot was the baseline value of 0.05.
 
@@ -85,19 +93,30 @@ Default format_copy + GRPO: `ppo_epochs=2, kl_coef=0.05, clip_eps=0.2, minibatch
 
 ## Question 5: Qualitative Behavior (Math Hard)
 
-*(Paste 1-2 example model generations from WandB math_hard tables here)*
+### Observation 1: Format learning precedes reasoning improvement
 
-### Example 1: Format learning precedes reasoning improvement
+![Math Hard — Boxed Answer Fraction](plots/math_hard_boxed.png)
 
-**Observation:** Early in GRPO training, the `completion_contains_boxed_answer_pattern` metric increased faster than `exact_match`. This indicates the model first learned to wrap its answers in `\boxed{}` formatting (which doesn't contribute to correctness) before actually improving its mathematical reasoning. The model learned to "play the game" of formatting to satisfy the reward parser before solving harder problems.
+The `boxed_answer_pattern` fraction increased steadily throughout GRPO training, rising from ~0.30 early on to ~0.85 by step 500. Meanwhile, the eval exact match only improved from 0.227 to 0.373. This gap shows the model first learned to **format** its answers in `\boxed{}` — satisfying the reward parser's structural expectation — before improving the actual mathematical correctness of those answers. The model learned to "play the game" of formatting before solving harder problems.
 
-### Example 2: Completion length decreases with training
+### Observation 2: Completion length decreases with training
 
-**Observation:** The `fraction_of_completions_that_hit_max_new_tokens_limit` decreased substantially over training. Early completions frequently rambled to the 512-token limit without reaching an answer. After GRPO training, the model learned to produce more concise reasoning chains and terminate with a boxed answer, reflecting a qualitative shift in generation behavior that goes beyond just accuracy improvements.
+![Math Hard — Mean Completion Length](plots/math_hard_completion_length.png)
 
-*(Replace with specific WandB screenshots and example prompts/completions when writing the final PDF)*
+Mean completion length dropped from ~470 tokens early in training to ~280 tokens by step 500 under GRPO. Early completions frequently rambled to the 512-token limit without reaching an answer. After training, the model learned to produce more concise reasoning chains and terminate with a boxed answer. This is a qualitative shift: rather than just improving accuracy on the same length of output, the model learned to be more efficient in its reasoning, which correlates with higher reward since completions that terminate properly are more likely to contain a parseable answer.
+
+REINFORCE shows a similar but weaker trend over its 201 steps — completion length decreases from ~470 to ~430 tokens — consistent with its slower overall learning.
 
 ---
+
+## Generating plots
+
+```bash
+uv pip install matplotlib
+uv run python scripts/plot_results.py
+```
+
+All plots are saved in `hw4/plots/`.
 
 ## Submission Checklist
 
@@ -112,7 +131,9 @@ Default format_copy + GRPO: `ppo_epochs=2, kl_coef=0.05, clip_eps=0.2, minibatch
   - [x] kl_coef=0.2
   - [x] clip_eps=0.1
   - [x] grad_accum_steps=1, minibatch_size=8
-- [x] Report questions 1-5 answered with actual data
-- [ ] WandB screenshots/plots pasted into final PDF
+- [x] Report questions 1-5 answered with data and plots
+- [x] Plots generated via `scripts/plot_results.py`
+- [ ] Convert report.md to PDF for submission
+- [ ] Gradescope submission bundle built
 - [ ] Code + artifacts zipped and uploaded to autograder
 - [ ] Report PDF uploaded to report assignment
